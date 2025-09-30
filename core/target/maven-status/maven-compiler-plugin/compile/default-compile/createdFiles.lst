@@ -1,0 +1,11 @@
+com/nymph/converter/core/model/ParameterMetadata.class
+com/nymph/converter/core/model/ModelMetadata.class
+com/nymph/converter/core/model/ConfigurationMetadata.class
+com/nymph/converter/core/converter/DocumentConverter.class
+com/nymph/converter/core/format/AgentCardConverter.class
+com/nymph/converter/core/format/OpenApiConverter.class
+com/nymph/converter/core/model/EndpointMetadata.class
+com/nymph/converter/core/format/JsonSchemaConverter.class
+com/nymph/converter/core/model/ApplicationMetadata.class
+com/nymph/converter/core/model/ResponseMetadata.class
+com/nymph/converter/core/model/PropertyMetadata.class
