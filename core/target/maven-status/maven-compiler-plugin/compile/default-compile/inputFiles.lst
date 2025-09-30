@@ -1,0 +1,11 @@
+/home/runner/work/agent-ready-docs-converter/agent-ready-docs-converter/core/src/main/java/com/nymph/converter/core/format/JsonSchemaConverter.java
+/home/runner/work/agent-ready-docs-converter/agent-ready-docs-converter/core/src/main/java/com/nymph/converter/core/model/ResponseMetadata.java
+/home/runner/work/agent-ready-docs-converter/agent-ready-docs-converter/core/src/main/java/com/nymph/converter/core/model/EndpointMetadata.java
+/home/runner/work/agent-ready-docs-converter/agent-ready-docs-converter/core/src/main/java/com/nymph/converter/core/model/PropertyMetadata.java
+/home/runner/work/agent-ready-docs-converter/agent-ready-docs-converter/core/src/main/java/com/nymph/converter/core/converter/DocumentConverter.java
+/home/runner/work/agent-ready-docs-converter/agent-ready-docs-converter/core/src/main/java/com/nymph/converter/core/model/ParameterMetadata.java
+/home/runner/work/agent-ready-docs-converter/agent-ready-docs-converter/core/src/main/java/com/nymph/converter/core/model/ModelMetadata.java
+/home/runner/work/agent-ready-docs-converter/agent-ready-docs-converter/core/src/main/java/com/nymph/converter/core/format/OpenApiConverter.java
+/home/runner/work/agent-ready-docs-converter/agent-ready-docs-converter/core/src/main/java/com/nymph/converter/core/format/AgentCardConverter.java
+/home/runner/work/agent-ready-docs-converter/agent-ready-docs-converter/core/src/main/java/com/nymph/converter/core/model/ApplicationMetadata.java
+/home/runner/work/agent-ready-docs-converter/agent-ready-docs-converter/core/src/main/java/com/nymph/converter/core/model/ConfigurationMetadata.java

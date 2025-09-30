@@ -1,0 +1,6 @@
+/home/runner/work/agent-ready-docs-converter/agent-ready-docs-converter/spring-boot-converter/src/main/java/com/nymph/converter/springboot/extractor/SpringBootMetadataExtractor.java
+/home/runner/work/agent-ready-docs-converter/agent-ready-docs-converter/spring-boot-converter/src/main/java/com/nymph/converter/springboot/analyzer/ModelAnalyzer.java
+/home/runner/work/agent-ready-docs-converter/agent-ready-docs-converter/spring-boot-converter/src/main/java/com/nymph/converter/springboot/cli/DocumentConverterCLI.java
+/home/runner/work/agent-ready-docs-converter/agent-ready-docs-converter/spring-boot-converter/src/main/java/com/nymph/converter/springboot/analyzer/ConfigurationAnalyzer.java
+/home/runner/work/agent-ready-docs-converter/agent-ready-docs-converter/spring-boot-converter/src/main/java/com/nymph/converter/springboot/analyzer/ControllerAnalyzer.java
+/home/runner/work/agent-ready-docs-converter/agent-ready-docs-converter/spring-boot-converter/src/main/java/com/nymph/converter/springboot/extractor/MetadataExtractor.java
