@@ -37,20 +37,14 @@ public class ControllerAnalyzer {
         
         Path srcPath = projectPath.resolve("src/main/java");
         if (!Files.exists(srcPath)) {
-            System.out.println("DEBUG: src/main/java does not exist at: " + srcPath);
             return endpoints;
         }
-        
-        System.out.println("DEBUG: Analyzing controllers in: " + srcPath);
         
         try (Stream<Path> paths = Files.walk(srcPath)) {
             paths.filter(path -> path.toString().endsWith(".java"))
                  .forEach(javaFile -> {
-                     System.out.println("DEBUG: Found Java file: " + javaFile);
                      if (isControllerFile(javaFile)) {
-                         System.out.println("DEBUG: Identified as controller: " + javaFile);
                          List<EndpointMetadata> controllerEndpoints = analyzeController(javaFile);
-                         System.out.println("DEBUG: Found " + controllerEndpoints.size() + " endpoints in " + javaFile);
                          endpoints.addAll(controllerEndpoints);
                      }
                  });
@@ -58,7 +52,6 @@ public class ControllerAnalyzer {
             System.err.println("Error analyzing controllers: " + e.getMessage());
         }
         
-        System.out.println("DEBUG: Total endpoints found: " + endpoints.size());
         return endpoints;
     }
     
@@ -78,43 +71,40 @@ public class ControllerAnalyzer {
         
         try {
             String content = Files.readString(controllerPath);
-            System.out.println("DEBUG: Controller content preview: " + content.substring(0, Math.min(200, content.length())) + "...");
-            
             String classBasePath = extractClassBasePath(content);
-            System.out.println("DEBUG: Class base path: " + classBasePath);
             
-            // Find all method mappings
-            Pattern methodPattern = Pattern.compile(
-                "@(Get|Post|Put|Delete|Patch|Request)Mapping[^}]*?public\\s+\\w+\\s+(\\w+)\\s*\\(([^)]*)\\)[^{]*\\{",
-                Pattern.DOTALL
-            );
+            // Split content into lines for easier processing
+            String[] lines = content.split("\n");
             
-            Matcher matcher = methodPattern.matcher(content);
-            System.out.println("DEBUG: Searching for mapping patterns...");
-            
-            while (matcher.find()) {
-                System.out.println("DEBUG: Found mapping match: " + matcher.group(0));
-                String annotationType = matcher.group(1);
-                String methodName = matcher.group(2);
-                String parameters = matcher.group(3);
+            for (int i = 0; i < lines.length; i++) {
+                String line = lines[i].trim();
                 
-                EndpointMetadata endpoint = createEndpoint(
-                    matcher.group(0), annotationType, methodName, parameters, classBasePath
-                );
-                
-                if (endpoint != null) {
-                    endpoints.add(endpoint);
-                    System.out.println("DEBUG: Created endpoint: " + endpoint.getMethod() + " " + endpoint.getPath());
-                }
-            }
-            
-            if (endpoints.isEmpty()) {
-                System.out.println("DEBUG: No mapping patterns found. Trying simpler pattern...");
-                // Try a simpler pattern
-                Pattern simplePattern = Pattern.compile("@(GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping)");
-                Matcher simpleMatcher = simplePattern.matcher(content);
-                while (simpleMatcher.find()) {
-                    System.out.println("DEBUG: Found simple mapping: " + simpleMatcher.group(0));
+                // Look for mapping annotations
+                if (line.matches(".*@(Get|Post|Put|Delete|Patch)Mapping.*")) {
+                    String annotationType = extractAnnotationType(line);
+                    String path = extractPathFromAnnotation(line);
+                    
+                    // Find the method declaration (usually next few lines)
+                    String methodName = null;
+                    String parameters = null;
+                    
+                    for (int j = i + 1; j < Math.min(i + 5, lines.length); j++) {
+                        String methodLine = lines[j].trim();
+                        if (methodLine.contains("public") && methodLine.contains("(")) {
+                            methodName = extractMethodName(methodLine);
+                            parameters = extractMethodParameters(methodLine, lines, j);
+                            break;
+                        }
+                    }
+                    
+                    if (methodName != null) {
+                        EndpointMetadata endpoint = createEndpointSimple(
+                            annotationType, methodName, parameters, path, classBasePath
+                        );
+                        if (endpoint != null) {
+                            endpoints.add(endpoint);
+                        }
+                    }
                 }
             }
             
@@ -132,22 +122,89 @@ public class ControllerAnalyzer {
         }
         return "";
     }
+
     
-    private EndpointMetadata createEndpoint(String mappingBlock, String annotationType, 
-                                          String methodName, String parameters, String classBasePath) {
+    private String extractAnnotationType(String line) {
+        if (line.contains("@GetMapping")) return "Get";
+        if (line.contains("@PostMapping")) return "Post";
+        if (line.contains("@PutMapping")) return "Put";
+        if (line.contains("@DeleteMapping")) return "Delete";
+        if (line.contains("@PatchMapping")) return "Patch";
+        return "Get"; // default
+    }
+    
+    private String extractPathFromAnnotation(String line) {
+        // Look for value in parentheses
+        Pattern pathPattern = Pattern.compile("\\(\\s*[\"']([^\"']*)[\"']");
+        Matcher matcher = pathPattern.matcher(line);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
         
-        String path = extractPath(mappingBlock);
+        // Look for value= parameter
+        Pattern valuePattern = Pattern.compile("value\\s*=\\s*[\"']([^\"']*)[\"']");
+        Matcher valueMatcher = valuePattern.matcher(line);
+        if (valueMatcher.find()) {
+            return valueMatcher.group(1);
+        }
+        
+        return "/"; // default
+    }
+    
+    private String extractMethodName(String methodLine) {
+        // Look for method name after public Type
+        Pattern methodPattern = Pattern.compile("public\\s+\\w+(?:<[^>]*>)?\\s+(\\w+)\\s*\\(");
+        Matcher matcher = methodPattern.matcher(methodLine);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return "unknownMethod";
+    }
+    
+    private String extractMethodParameters(String methodLine, String[] lines, int startIndex) {
+        // Simple parameter extraction - look for parameters between parentheses
+        StringBuilder params = new StringBuilder();
+        boolean foundStart = false;
+        
+        for (int i = startIndex; i < lines.length; i++) {
+            String line = lines[i];
+            int openParen = line.indexOf('(');
+            int closeParen = line.indexOf(')');
+            
+            if (openParen != -1) {
+                foundStart = true;
+                params.append(line.substring(openParen + 1));
+                if (closeParen > openParen) {
+                    // Parameters end on same line
+                    int endIndex = params.length() - (line.length() - closeParen);
+                    return params.substring(0, endIndex);
+                }
+            } else if (foundStart) {
+                params.append(line);
+                if (closeParen != -1) {
+                    // Parameters end on this line
+                    int endIndex = params.length() - (line.length() - closeParen);
+                    return params.substring(0, endIndex);
+                }
+            }
+        }
+        
+        return params.toString();
+    }
+    
+    private EndpointMetadata createEndpointSimple(String annotationType, String methodName, 
+                                                String parameters, String path, String classBasePath) {
         String httpMethod = mapAnnotationToHttpMethod(annotationType);
-        
-        // Combine class base path with method path
         String fullPath = combinePaths(classBasePath, path);
         
         EndpointMetadata endpoint = new EndpointMetadata(fullPath, httpMethod, 
             "Generated from method: " + methodName);
         
         // Extract parameters
-        List<ParameterMetadata> params = extractParameters(parameters);
-        endpoint.setParameters(params);
+        if (parameters != null && !parameters.trim().isEmpty()) {
+            List<ParameterMetadata> params = extractParametersSimple(parameters);
+            endpoint.setParameters(params);
+        }
         
         // Set default response
         Map<String, ResponseMetadata> responses = new HashMap<>();
@@ -157,14 +214,36 @@ public class ControllerAnalyzer {
         return endpoint;
     }
     
-    private String extractPath(String mappingBlock) {
-        // Try to extract value from mapping annotation
-        Pattern pathPattern = Pattern.compile("(?:value\\s*=\\s*)?[\"']([^\"']*)[\"']");
-        Matcher matcher = pathPattern.matcher(mappingBlock);
-        if (matcher.find()) {
-            return matcher.group(1);
+    private List<ParameterMetadata> extractParametersSimple(String parametersString) {
+        List<ParameterMetadata> parameters = new ArrayList<>();
+        
+        // Split by comma and analyze each parameter
+        String[] params = parametersString.split(",");
+        for (String param : params) {
+            param = param.trim();
+            
+            if (param.contains("@PathVariable")) {
+                String name = extractLastWord(param);
+                String type = extractParameterType(param);
+                parameters.add(new ParameterMetadata(name, type, "path", true));
+            } else if (param.contains("@RequestParam")) {
+                String name = extractLastWord(param);
+                String type = extractParameterType(param);
+                boolean required = !param.contains("required = false");
+                parameters.add(new ParameterMetadata(name, type, "query", required));
+            } else if (param.contains("@RequestBody")) {
+                String name = extractLastWord(param);
+                String type = extractParameterType(param);
+                parameters.add(new ParameterMetadata(name, type, "body", true));
+            }
         }
-        return "/";
+        
+        return parameters;
+    }
+    
+    private String extractLastWord(String param) {
+        String[] words = param.trim().split("\\s+");
+        return words.length > 0 ? words[words.length - 1] : "param";
     }
     
     private String mapAnnotationToHttpMethod(String annotationType) {
